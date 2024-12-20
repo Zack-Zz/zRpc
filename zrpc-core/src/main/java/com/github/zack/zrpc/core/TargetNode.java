@@ -11,18 +11,18 @@ public class TargetNode implements Serializable {
     /**
      * IP
      */
-    private String ip;
+    private String host;
     /**
      * PORT
      */
     private Integer port;
 
-    public String getIp() {
-        return ip;
+    public String getHost() {
+        return host;
     }
 
-    public void setIp(String ip) {
-        this.ip = ip;
+    public void setHost(String host) {
+        this.host = host;
     }
 
     public Integer getPort() {
@@ -36,7 +36,7 @@ public class TargetNode implements Serializable {
     @Override
     public String toString() {
         return "TargetNode{" +
-                "ip='" + ip + '\'' +
+                "host='" + host + '\'' +
                 ", port='" + port + '\'' +
                 '}';
     }

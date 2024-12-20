@@ -15,7 +15,7 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
  */
 public class TargetServer {
 
-    public void connect(TargetNode targetNode) throws InterruptedException {
+    public void connect(ServerNode serverNode) throws InterruptedException {
         // 创建事件循环组
         EventLoopGroup bossGroup = new NioEventLoopGroup(); // 接收连接
         EventLoopGroup workerGroup = new NioEventLoopGroup(); // 处理读写
@@ -34,7 +34,7 @@ public class TargetServer {
                     });
 
             // 绑定端口，启动服务
-            ChannelFuture future = bootstrap.bind(targetNode.getIp(), targetNode.getPort()).sync();
+            ChannelFuture future = bootstrap.bind(serverNode.getPort()).sync();
             System.out.println("Server started, listening on port 8080");
             // 阻塞，直到关闭
             future.channel().closeFuture().sync();
