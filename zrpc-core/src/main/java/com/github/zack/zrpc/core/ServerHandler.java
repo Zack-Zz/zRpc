@@ -1,23 +1,39 @@
 package com.github.zack.zrpc.core;
 
+import com.github.zack.zrpc.core.request.RequestContext;
+import com.github.zack.zrpc.core.response.ResponseContext;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.SimpleChannelInboundHandler;
 
 /**
  * @author zack
  * @since 2024/12/19
  */
-public class ServerHandler extends ChannelInboundHandlerAdapter {
-    @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) {
-        // 处理客户端发送的消息
-        System.out.println("Received message: " + msg);
-        ctx.writeAndFlush("Hello, Client!"); // 回复客户端
-    }
+public class ServerHandler extends SimpleChannelInboundHandler<RequestContext> {
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        cause.printStackTrace();
-        ctx.close(); // 关闭连接
+    protected void channelRead0(ChannelHandlerContext channelHandlerContext, RequestContext requestContext) throws Exception {
+        ResponseContext response = new ResponseContext();
+        response.setRequestId(requestContext.getRequestId());
+
+        try {
+            // 反射调用目标方法
+            Object result = invoke(requestContext);
+            response.setResult(result);
+        } catch (Exception e) {
+            response.setError(e.getMessage());
+        }
+
+        // 发送响应（交给 RpcResponseEncoder 编码）
+        channelHandlerContext.writeAndFlush(response);
+    }
+
+    private Object invoke(RequestContext request) throws Exception {
+        String className = request.getClassName();
+        String methodName = request.getMethodName();
+        Class<?> clazz = Class.forName(className);
+        Object service = ServiceRegistry.getService(clazz);
+        return clazz.getMethod(methodName, request.getParameterTypes()).invoke(service, request.getParameters());
     }
 }

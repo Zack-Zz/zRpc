@@ -2,34 +2,38 @@ package com.github.zack.zrpc.core;
 
 import com.github.zack.zrpc.core.logger.Logger;
 import com.github.zack.zrpc.core.logger.LoggerFactory;
+import com.github.zack.zrpc.core.request.RequestContext;
+import com.github.zack.zrpc.core.response.ResponseContext;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.SimpleChannelInboundHandler;
+
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author zack
  * @since 2024/12/20
  */
-public class ClientHandler extends ChannelInboundHandlerAdapter {
+public class ClientHandler extends SimpleChannelInboundHandler<ResponseContext> {
 
     private static final Logger logger = LoggerFactory.getLogger(ClientHandler.class);
 
-    @Override
-    public void channelActive(ChannelHandlerContext ctx) {
-        logger.info("Connected to server");
+    // 存储等待响应的请求
+    private static final ConcurrentHashMap<String, RpcFuture> pendingRequests = new ConcurrentHashMap<>();
 
-        ctx.writeAndFlush("Hello, Server!"); // 向服务端发送数据
+    public static RpcFuture sendRequest(RequestContext request, ChannelHandlerContext ctx) {
+        RpcFuture rpcFuture = new RpcFuture();
+        pendingRequests.put(request.getRequestId(), rpcFuture);
+        ctx.writeAndFlush(request);
+        return rpcFuture;
     }
 
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) {
-        // 处理服务端返回的数据
-        logger.info("Received from server: " + msg);
+    protected void channelRead0(ChannelHandlerContext ctx, ResponseContext response) {
+        RpcFuture rpcFuture = pendingRequests.remove(response.getRequestId());
+        if (rpcFuture != null) {
+            rpcFuture.setResponse(response);
+        }
     }
 
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        cause.printStackTrace();
-        ctx.close(); // 关闭连接
-    }
 
 }

@@ -1,5 +1,7 @@
 package com.github.zack.zrpc.core;
 
+import com.github.zack.zrpc.core.request.RequestEncoder;
+import com.github.zack.zrpc.core.response.ResponseDecoder;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -24,6 +26,9 @@ public class NettyClient {
                     .handler(new ChannelInitializer<Channel>() {
                         @Override
                         protected void initChannel(Channel ch) {
+
+                            ch.pipeline().addLast(new ResponseDecoder());
+                            ch.pipeline().addLast(new RequestEncoder());
                             ch.pipeline().addLast(new ClientHandler());
                         }
                     });

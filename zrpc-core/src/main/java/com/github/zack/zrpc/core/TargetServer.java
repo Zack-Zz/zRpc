@@ -1,5 +1,7 @@
 package com.github.zack.zrpc.core;
 
+import com.github.zack.zrpc.core.request.RequestDecoder;
+import com.github.zack.zrpc.core.response.ResponseEncoder;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -28,8 +30,10 @@ public class TargetServer {
                         @Override
                         protected void initChannel(SocketChannel ch) {
                             ChannelPipeline pipeline = ch.pipeline();
-                            // 添加自定义处理器
+
+                            pipeline.addLast(new RequestDecoder());
                             pipeline.addLast(new ServerHandler());
+                            pipeline.addLast(new ResponseEncoder());
                         }
                     });
 

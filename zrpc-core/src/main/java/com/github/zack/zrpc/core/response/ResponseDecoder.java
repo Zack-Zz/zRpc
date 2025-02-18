@@ -1,4 +1,4 @@
-package com.github.zack.zrpc.core.request;
+package com.github.zack.zrpc.core.response;
 
 import com.github.zack.zrpc.core.serializer.KryoSerializer;
 import io.netty.buffer.ByteBuf;
@@ -10,34 +10,35 @@ import java.util.List;
 /**
  *
  * @author zack
- * @since 2025/2/17
+ * @since 2025/2/18
  */
-public class RequestDecoder extends ByteToMessageDecoder {
-
+public class ResponseDecoder extends ByteToMessageDecoder {
     @Override
     protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list) throws Exception {
-        // 检查是否有足够的数据读取
+        // 先读取长度
         if (byteBuf.readableBytes() < 4) {
             return;
         }
-
-        // 读取请求长度
+        byteBuf.markReaderIndex(); // 标记当前读指针
         int length = byteBuf.readInt();
+
+        // 确保数据完整
         if (byteBuf.readableBytes() < length) {
+            byteBuf.resetReaderIndex();
             return;
         }
 
-        // 读取请求数据
+        // 读取数据
         byte[] data = new byte[length];
         byteBuf.readBytes(data);
 
-        // 反序列化成 RpcRequest 对象
-        RequestContext request = deserialize(data, RequestContext.class);
-        list.add(request);
+        // 反序列化 RpcResponse
+        ResponseContext response = deserialize(data, ResponseContext.class);
+        list.add(response);
     }
 
     private <T> T deserialize(byte[] data, Class<T> clazz) {
-        // 这里可以用 Kryo、Protobuf 或 JSON 反序列化
-        return KryoSerializer.deserialize(data, clazz);
+        return KryoSerializer.deserialize(data, clazz); // 可以换成 Protobuf
     }
+
 }
