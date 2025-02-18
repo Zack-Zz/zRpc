@@ -17,7 +17,7 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
  */
 public class TargetServer {
 
-    public void connect(ServerNode serverNode) throws InterruptedException {
+    public void openConnect(ServerNode serverNode) throws InterruptedException {
         // 创建事件循环组
         EventLoopGroup bossGroup = new NioEventLoopGroup(); // 接收连接
         EventLoopGroup workerGroup = new NioEventLoopGroup(); // 处理读写

@@ -16,6 +16,8 @@ import io.netty.channel.socket.nio.NioSocketChannel;
  */
 public class NettyClient {
 
+    private Channel channel;
+
     public void connect(TargetNode targetNode) throws InterruptedException {
         EventLoopGroup group = new NioEventLoopGroup();
 
@@ -35,10 +37,14 @@ public class NettyClient {
 
             // 连接到服务端
             ChannelFuture future = bootstrap.connect(targetNode.getHost(), targetNode.getPort()).sync();
+            NettyClient.this.channel = future.channel();
             future.channel().closeFuture().sync();
         } finally {
             group.shutdownGracefully();
         }
     }
 
+    public Channel getChannel() {
+        return channel;
+    }
 }
