@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+option java_package = "com.github.zack.zrpc.core.proto";
+option java_multiple_files = true;
+option java_outer_classname = "ResponseMessageProto"; // 生成的 Java 外部类
+
+message ResponseMessage {
+  string requestId = 1;   // 请求 ID
+  bytes result = 2;       // `Object` 类型，用 `bytes` 存储
+  string error = 3;       // 错误消息（如果有）
+}

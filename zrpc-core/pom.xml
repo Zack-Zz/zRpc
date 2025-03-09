@@ -12,6 +12,11 @@
     <artifactId>zrpc-core</artifactId>
 
 
+    <properties>
+        <protobuf.version>3.20.3</protobuf.version>
+    </properties>
+
+
     <dependencies>
         <!-- https://mvnrepository.com/artifact/io.netty/netty-all -->
         <dependency>
@@ -21,9 +26,14 @@
         </dependency>
 
         <dependency>
-            <groupId>com.esotericsoftware.kryo</groupId>
-            <artifactId>kryo5</artifactId>
-            <version>5.6.2</version>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
+            <version>${protobuf.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java-util</artifactId>
+            <version>${protobuf.version}</version>
         </dependency>
 
 

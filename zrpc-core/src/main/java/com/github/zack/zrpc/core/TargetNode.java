@@ -8,6 +8,8 @@ import java.io.Serializable;
  */
 public class TargetNode implements Serializable {
 
+    private static final long serialVersionUID = 7958362374873724453L;
+
     /**
      * IP
      */

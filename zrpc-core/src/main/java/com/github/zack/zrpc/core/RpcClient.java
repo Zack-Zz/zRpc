@@ -1,7 +1,9 @@
 package com.github.zack.zrpc.core;
 
-import com.github.zack.zrpc.core.request.RequestContext;
-import com.github.zack.zrpc.core.response.ResponseContext;
+import com.github.zack.zrpc.core.dispatcher.RequestPendingDispatcher;
+import com.github.zack.zrpc.core.dispatcher.RequestFuture;
+import com.github.zack.zrpc.core.proto.RequestMessage;
+import com.github.zack.zrpc.core.proto.ResponseMessage;
 import io.netty.channel.Channel;
 
 /**
@@ -17,8 +19,12 @@ public class RpcClient {
         this.channel = channel;
     }
 
-    public ResponseContext sendRequest(RequestContext request) throws InterruptedException {
-        RpcFuture future = ClientHandler.sendRequest(request, channel.pipeline().context(ClientHandler.class));
+    public ResponseMessage sendRequest(RequestMessage request) throws InterruptedException {
+
+        channel.writeAndFlush(request);
+
+        RequestFuture future = RequestPendingDispatcher.singleInstance().sendRequest(request);
         return future.get(5000); // 超时 5 秒
     }
+
 }

@@ -1,5 +1,6 @@
-package com.github.zack.zrpc.core;
+package com.github.zack.zrpc.core.dispatcher;
 
+import com.github.zack.zrpc.core.proto.ResponseMessage;
 import com.github.zack.zrpc.core.response.ResponseContext;
 
 import java.util.concurrent.CountDownLatch;
@@ -11,16 +12,16 @@ import java.util.concurrent.TimeUnit;
  * @author zack
  * @since 2025/2/18
  */
-public class RpcFuture {
-    private ResponseContext response;
+public class RequestFuture {
+    private ResponseMessage response;
     private final CountDownLatch latch = new CountDownLatch(1);
 
-    public void setResponse(ResponseContext response) {
+    public void setResponse(ResponseMessage response) {
         this.response = response;
         latch.countDown(); // 释放等待
     }
 
-    public ResponseContext get(long timeout) throws InterruptedException {
+    public ResponseMessage get(long timeout) throws InterruptedException {
         latch.await(timeout, TimeUnit.MILLISECONDS);
         return response;
     }

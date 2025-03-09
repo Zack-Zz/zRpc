@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+option java_package = "com.github.zack.zrpc.core.proto";
+option java_multiple_files = true;
+option java_outer_classname = "RequestMessageProto";
+
+message RequestMessage {
+  string requestId = 1;
+  string className = 2;
+  string methodName = 3;
+
+  repeated string parameterTypes = 4; // `Class<?>[]` 用 `string` 存类名
+  repeated bytes parameters = 5; // `Object[]` 存为 `bytes`
+
+}
+
