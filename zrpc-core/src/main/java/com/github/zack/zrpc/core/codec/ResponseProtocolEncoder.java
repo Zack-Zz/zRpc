@@ -1,7 +1,6 @@
 package com.github.zack.zrpc.core.codec;
 
 import com.github.zack.zrpc.core.proto.ResponseMessage;
-import com.github.zack.zrpc.core.response.ResponseContext;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageEncoder;
