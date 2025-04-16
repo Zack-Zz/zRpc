@@ -17,10 +17,13 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioChannelOption;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.flush.FlushConsolidationHandler;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.timeout.IdleStateHandler;
+import io.netty.handler.traffic.GlobalTrafficShapingHandler;
 import io.netty.util.concurrent.DefaultThreadFactory;
+import io.netty.util.concurrent.UnorderedThreadPoolEventExecutor;
 
 import java.util.concurrent.TimeUnit;
 
@@ -37,8 +40,13 @@ public class TargetServer {
         EventLoopGroup workerGroup = new NioEventLoopGroup(8, new DefaultThreadFactory("workerGroup"));
 
 
+        UnorderedThreadPoolEventExecutor businessGroup = new UnorderedThreadPoolEventExecutor(10, new DefaultThreadFactory("business"));
+
         LoggingHandler infoHandler = new LoggingHandler(LogLevel.INFO);
         MetricHandler metricHandler = new MetricHandler();
+        // 禁用流量整形
+//        NioEventLoopGroup eventLoopGroupForTrafficShaping = new NioEventLoopGroup(0, new DefaultThreadFactory("TS"));
+//        GlobalTrafficShapingHandler globalTrafficShapingHandler = new GlobalTrafficShapingHandler(eventLoopGroupForTrafficShaping, 10 * 1024 * 1024, 10 * 1024 * 1024);
 
         try {
             ServerBootstrap bootstrap = new ServerBootstrap();
@@ -54,12 +62,16 @@ public class TargetServer {
 
                             pipeline.addLast(new IdleStateHandler(60, 30, 0, TimeUnit.SECONDS));
 
+//                            pipeline.addLast("trafficShapingHandler", globalTrafficShapingHandler);
+
                             pipeline.addLast("frameDecoder", new StreamFrameDecoder());
                             pipeline.addLast("frameEncoder", new StreamFrameEncoder());
                             pipeline.addLast("protocolDecoder", new RequestProtocolDecoder());
                             pipeline.addLast("protocolEncoder", new ResponseProtocolEncoder());
 
-                            pipeline.addLast("serverHandler", new ServerHandler());
+                            // 每5次写进行一次flush，打开异步增强
+                            pipeline.addLast("flushEnhance", new FlushConsolidationHandler(5, true));
+                            pipeline.addLast(businessGroup, "serverHandler", new ServerHandler());
 
                             pipeline.addLast("metricHandler", metricHandler);
                             pipeline.addLast("infoHandler", infoHandler);

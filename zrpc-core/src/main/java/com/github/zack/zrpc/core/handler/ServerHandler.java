@@ -2,6 +2,8 @@ package com.github.zack.zrpc.core.handler;
 
 import com.github.zack.zrpc.core.ServiceRegistry;
 import com.github.zack.zrpc.core.common.ProtobufSerializer;
+import com.github.zack.zrpc.core.logger.Logger;
+import com.github.zack.zrpc.core.logger.LoggerFactory;
 import com.github.zack.zrpc.core.proto.RequestMessage;
 import com.github.zack.zrpc.core.proto.ResponseMessage;
 import com.google.protobuf.ByteString;
@@ -17,6 +19,8 @@ import java.util.List;
  */
 public class ServerHandler extends SimpleChannelInboundHandler<RequestMessage> {
 
+    private Logger logger = LoggerFactory.getLogger(ServerHandler.class);
+
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, RequestMessage requestMessage) throws Exception {
         ResponseMessage.Builder builder = ResponseMessage.newBuilder();
@@ -29,7 +33,11 @@ public class ServerHandler extends SimpleChannelInboundHandler<RequestMessage> {
             builder.setError(e.getMessage());
         }
 
-        channelHandlerContext.writeAndFlush(builder.build());
+        if (channelHandlerContext.channel().isWritable() && channelHandlerContext.channel().isWritable()) {
+            channelHandlerContext.writeAndFlush(builder.build());
+        } else {
+            logger.error("msg dropped. reqId:{}. msg: {}", requestMessage.getRequestId(), builder.build());
+        }
     }
 
     private Object invoke(RequestMessage requestMessage) throws Exception {
@@ -60,7 +68,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<RequestMessage> {
                 parameters[i] = Double.parseDouble(obj.toString());
             } else if (aClass == Float.class) {
                 parameters[i] = Float.parseFloat(obj.toString());
-            }else {
+            } else {
                 parameters[i] = obj;
             }
         }
