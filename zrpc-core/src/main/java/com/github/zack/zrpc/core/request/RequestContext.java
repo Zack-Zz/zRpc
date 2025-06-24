@@ -7,10 +7,26 @@ package com.github.zack.zrpc.core.request;
  */
 public class RequestContext {
 
+    /**
+     * request id
+     */
     private String requestId;
+
+    /**
+     * server class name
+     */
     private String className;
+    /**
+     * server method name
+     */
     private String methodName;
+    /**
+     * server method parameter types
+     */
     private Class<?>[] parameterTypes;
+    /**
+     * server method parameters
+     */
     private Object[] parameters;
 
 

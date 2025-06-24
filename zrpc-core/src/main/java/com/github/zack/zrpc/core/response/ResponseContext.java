@@ -6,8 +6,18 @@ package com.github.zack.zrpc.core.response;
  * @since 2025/2/17
  */
 public class ResponseContext {
+
+    /**
+     * request id
+     */
     private String requestId;
+    /**
+     * result of the request
+     */
     private Object result;
+    /**
+     * error message if the request failed
+     */
     private String error;
 
     public String getRequestId() {
