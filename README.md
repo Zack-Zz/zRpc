@@ -1,50 +1,52 @@
 # zRpc
 
-zRpc 是一个基于 Netty + Protobuf 的轻量级 Java RPC 框架，当前聚焦在 `zrpc-core` 的稳定性与开源可用性建设。
+English | [简体中文](README.zh-CN.md)
 
-## 当前状态
+zRpc is a lightweight Java RPC framework based on Netty + Protobuf, currently focused on hardening `zrpc-core` for open-source readiness.
 
-- 已实现：`zrpc-core`
-- 规划中：`zrpc-api`、`zrpc-adapter`、`zrpc-agent`
+## Status
 
-说明：规划中的模块尚未在仓库落地，请以当前代码与 release note 为准。
+- Implemented: `zrpc-core`
+- Planned: `zrpc-api`, `zrpc-adapter`, `zrpc-agent`
 
-## 特性
+Note: planned modules are not implemented in this repository yet. Please treat the current code and release notes as the source of truth.
 
-- 基于 Netty 的长连接通信
-- 自定义请求/响应协议
-- 请求-响应异步关联与超时控制
-- 安全默认序列化（默认不使用 Java 原生反序列化）
-- 基础指标采集与日志能力
+## Features
 
-## 环境要求
+- Long-lived connections based on Netty
+- Custom request/response protocol
+- Async request-response correlation with timeout handling
+- Safe serializer by default (Java native deserialization is not the default)
+- Basic metrics and logging hooks
+
+## Requirements
 
 - JDK 17+
 - Maven 3.9+
 
-## 快速开始
+## Quick Start
 
-### 1) 拉取并测试
+### 1) Build and test
 
 ```bash
 mvn -q test
 ```
 
-### 2) 运行最小 Demo
+### 2) Run the minimal demo
 
-在 IDE 中分别运行以下类：
+Run these classes in your IDE:
 
-1. 服务端：`zrpc-core/src/test/java/com/github/zack/zrpc/core/test/demo/ServerTester.java`
-2. 客户端：`zrpc-core/src/test/java/com/github/zack/zrpc/core/test/demo/ClientTester.java`
+1. Server: `zrpc-core/src/test/java/com/github/zack/zrpc/core/test/demo/ServerTester.java`
+2. Client: `zrpc-core/src/test/java/com/github/zack/zrpc/core/test/demo/ClientTester.java`
 
-客户端将输出 RPC 调用结果。
+The client will print the RPC result.
 
-## 序列化策略
+## Serializer Strategy
 
-- 默认：`safe`（受限类型集合，安全默认）
-- 兼容模式：`java`（仅兼容用途，不建议用于不可信输入）
+- Default: `safe` (bounded type set, security-first)
+- Compatibility mode: `java` (for compatibility only; not recommended for untrusted inputs)
 
-切换方式：
+Switch mode:
 
 ```bash
 mvn -Dzrpc.serializer=java test
@@ -53,26 +55,26 @@ mvn -Dzrpc.serializer=java test
 ## Roadmap
 
 - `v0.1.x`
-  - 完成 core 稳定性治理
-  - 建立 CI、测试门禁和发布基线
+  - Core stability hardening
+  - CI, test gate, and release baseline
 - `v0.2.x`
-  - 规划引入 `zrpc-api`
-  - 扩展序列化/注册中心适配能力
+  - Introduce `zrpc-api`
+  - Extend serializer/registry adapters
 
-## 文档
+## Docs
 
-- 设计文档：`docs/open-source-readiness-design.md`
-- 执行方案：`docs/open-source-readiness-execution-plan.md`
-- 发布手册：`docs/release-runbook.md`
+- Design: `docs/open-source-readiness-design.md`
+- Execution plan: `docs/open-source-readiness-execution-plan.md`
+- Release runbook: `docs/release-runbook.md`
 
-## 贡献
+## Contributing
 
-请先阅读 `CONTRIBUTING.md`。
+See `CONTRIBUTING.md`.
 
-## 安全
+## Security
 
-安全漏洞提交流程见 `SECURITY.md`。
+See `SECURITY.md` for vulnerability reporting.
 
-## 许可证
+## License
 
-`LICENSE`（Apache-2.0）
+`LICENSE` (Apache-2.0)
