@@ -1,8 +1,10 @@
 package com.github.zack.zrpc.core.common;
 
+import com.github.zack.zrpc.core.serialize.Serializer;
+import com.github.zack.zrpc.core.serialize.SerializerFactory;
 import com.google.protobuf.ByteString;
 
-import java.io.*;
+import java.io.IOException;
 
 /**
  *
@@ -10,23 +12,17 @@ import java.io.*;
  * @since 2025/3/9
  */
 public class ProtobufSerializer {
+    private static final Serializer DEFAULT_SERIALIZER = SerializerFactory.createDefault();
+
     private ProtobufSerializer() {
     }
 
     public static Object deserializeObject(ByteString byteString) throws IOException, ClassNotFoundException {
-        ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(byteString.toByteArray());
-        ObjectInputStream objectInputStream = new ObjectInputStream(byteArrayInputStream);
-        Object obj = objectInputStream.readObject();
-        objectInputStream.close();
-        return obj;
+        return DEFAULT_SERIALIZER.deserialize(byteString);
     }
 
 
     public static ByteString serializeObject(Object obj) throws IOException {
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
-        objectOutputStream.writeObject(obj);
-        objectOutputStream.close();
-        return ByteString.copyFrom(byteArrayOutputStream.toByteArray());
+        return DEFAULT_SERIALIZER.serialize(obj);
     }
 }

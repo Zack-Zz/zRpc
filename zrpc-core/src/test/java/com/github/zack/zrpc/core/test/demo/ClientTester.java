@@ -9,15 +9,8 @@ import com.github.zack.zrpc.core.logger.Logger;
 import com.github.zack.zrpc.core.logger.LoggerFactory;
 import com.github.zack.zrpc.core.proto.RequestMessage;
 import com.github.zack.zrpc.core.proto.ResponseMessage;
-import com.github.zack.zrpc.core.request.RequestContext;
-import com.github.zack.zrpc.core.response.ResponseContext;
-import com.google.protobuf.ByteString;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 
 /**
  *
@@ -31,22 +24,10 @@ public class ClientTester {
     public static void main(String[] args) throws InterruptedException, IOException, ClassNotFoundException {
 
         NettyClient nettyClient = new NettyClient();
-
-        CompletableFuture.runAsync(() -> {
-            TargetNode targetNode = new TargetNode();
-            targetNode.setHost("127.0.0.1");
-            targetNode.setPort(8081);
-
-            try {
-                nettyClient.connect(targetNode);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        });
-
-        while (!nettyClient.isConnectedSuccess()) {
-            TimeUnit.SECONDS.sleep(1);
-        }
+        TargetNode targetNode = new TargetNode();
+        targetNode.setHost("127.0.0.1");
+        targetNode.setPort(8081);
+        nettyClient.connect(targetNode);
 
         logger.info("connected and preparing...");
 
@@ -62,7 +43,7 @@ public class ClientTester {
             builder.addParameterTypes(paramType.getName());
         }
 
-        Object[] parameters = {1};
+        Object[] parameters = {1L};
         for (Object param : parameters) {
             try {
                 builder.addParameters(ProtobufSerializer.serializeObject(param));
@@ -75,6 +56,7 @@ public class ClientTester {
         // 发送 RPC 请求并获取结果
         ResponseMessage response = rpcClient.sendRequest(builder.build());
         System.out.println("RPC 结果：" + ProtobufSerializer.deserializeObject(response.getResult()));
+        nettyClient.close();
 
     }
 

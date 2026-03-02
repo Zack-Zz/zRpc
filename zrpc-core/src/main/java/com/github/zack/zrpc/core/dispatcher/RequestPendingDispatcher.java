@@ -1,9 +1,5 @@
 package com.github.zack.zrpc.core.dispatcher;
 
-import com.github.zack.zrpc.core.proto.RequestMessage;
-import com.github.zack.zrpc.core.request.RequestContext;
-
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -21,17 +17,30 @@ public class RequestPendingDispatcher {
         private static final RequestPendingDispatcher instance = new RequestPendingDispatcher();
     }
 
-    private Map<String, ResponseDispatcher> pendingSyncRequests = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, RequestFuture> pendingRequests = new ConcurrentHashMap<>();
 
-    private ConcurrentHashMap<String, RequestFuture> pendingRequests = new ConcurrentHashMap<>();
-
-    public RequestFuture sendRequest(RequestMessage request) {
-        RequestFuture requestFuture = new RequestFuture();
-        pendingRequests.put(request.getRequestId(), requestFuture);
+    public RequestFuture register(String requestId) {
+        RequestFuture requestFuture = new RequestFuture(requestId);
+        RequestFuture previous = pendingRequests.putIfAbsent(requestId, requestFuture);
+        if (previous != null) {
+            throw new IllegalStateException("Duplicate requestId detected: " + requestId);
+        }
         return requestFuture;
     }
 
     public RequestFuture remove(String requestId) {
         return pendingRequests.remove(requestId);
+    }
+
+    public boolean remove(String requestId, RequestFuture requestFuture) {
+        return pendingRequests.remove(requestId, requestFuture);
+    }
+
+    public int size() {
+        return pendingRequests.size();
+    }
+
+    public void clear() {
+        pendingRequests.clear();
     }
 }

@@ -19,35 +19,35 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class MetricHandler extends ChannelDuplexHandler {
 
-    private AtomicLong totalConnectedConnections = new AtomicLong(0);
+    private final AtomicLong totalConnectedConnections = new AtomicLong(0);
 
-    private AtomicLong readDataLength = new AtomicLong();
+    private final AtomicLong readDataLength = new AtomicLong();
 
-    private AtomicLong readTimeoutCauses = new AtomicLong();
+    private final AtomicLong readTimeoutCauses = new AtomicLong();
 
     {
         MetricRegistry metricRegistry = new MetricRegistry();
 
         metricRegistry.register("totalConnectedConnections", new Gauge<Long>() {
-            @Override
-            public Long getValue() {
-                return totalConnectedConnections.longValue();
-            }
-        });
+                @Override
+                public Long getValue() {
+                    return totalConnectedConnections.get();
+                }
+            });
 
         metricRegistry.register("readDataLength", new Gauge<Long>() {
-            @Override
-            public Long getValue() {
-                return readDataLength.longValue();
-            }
-        });
+                @Override
+                public Long getValue() {
+                    return readDataLength.get();
+                }
+            });
 
         metricRegistry.register("readTimeoutCauses", new Gauge<Long>() {
-            @Override
-            public Long getValue() {
-                return readDataLength.longValue();
-            }
-        });
+                @Override
+                public Long getValue() {
+                    return readTimeoutCauses.get();
+                }
+            });
 
 
         ConsoleReporter consoleReporter = ConsoleReporter.forRegistry(metricRegistry).build();

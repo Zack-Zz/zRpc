@@ -21,6 +21,8 @@ public class ClientHandler extends SimpleChannelInboundHandler<ResponseMessage> 
         RequestFuture requestFuture = RequestPendingDispatcher.singleInstance().remove(response.getRequestId());
         if (requestFuture != null) {
             requestFuture.setResponse(response);
+        } else {
+            logger.warn("No pending request matched response. requestId={}", response.getRequestId());
         }
     }
 

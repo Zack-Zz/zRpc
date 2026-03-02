@@ -9,6 +9,7 @@ import com.github.zack.zrpc.core.handler.ServerHandler;
 import com.github.zack.zrpc.core.logger.Logger;
 import com.github.zack.zrpc.core.logger.LoggerFactory;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
@@ -21,7 +22,6 @@ import io.netty.handler.flush.FlushConsolidationHandler;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.timeout.IdleStateHandler;
-import io.netty.handler.traffic.GlobalTrafficShapingHandler;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import io.netty.util.concurrent.UnorderedThreadPoolEventExecutor;
 
@@ -34,59 +34,112 @@ import java.util.concurrent.TimeUnit;
 public class TargetServer {
 
     private final Logger logger = LoggerFactory.getLogger(TargetServer.class);
+    private volatile EventLoopGroup bossGroup;
+    private volatile EventLoopGroup workerGroup;
+    private volatile UnorderedThreadPoolEventExecutor businessGroup;
+    private volatile Channel serverChannel;
 
-    public void openConnect(ServerNode serverNode) throws InterruptedException {
-        EventLoopGroup bossGroup = new NioEventLoopGroup(2, new DefaultThreadFactory("bossGroup"));
-        EventLoopGroup workerGroup = new NioEventLoopGroup(8, new DefaultThreadFactory("workerGroup"));
+    public synchronized void openConnect(ServerNode serverNode) throws InterruptedException {
+        start(serverNode);
+        Channel currentServerChannel = this.serverChannel;
+        if (currentServerChannel != null) {
+            currentServerChannel.closeFuture().sync();
+        }
+    }
 
+    public synchronized void start(ServerNode serverNode) throws InterruptedException {
+        if (serverNode == null) {
+            throw new IllegalArgumentException("serverNode must not be null");
+        }
+        if (serverNode.getPort() <= 0) {
+            throw new IllegalArgumentException("server port must be positive");
+        }
+        if (isRunning()) {
+            return;
+        }
 
-        UnorderedThreadPoolEventExecutor businessGroup = new UnorderedThreadPoolEventExecutor(10, new DefaultThreadFactory("business"));
+        EventLoopGroup localBossGroup = new NioEventLoopGroup(2, new DefaultThreadFactory("bossGroup"));
+        EventLoopGroup localWorkerGroup = new NioEventLoopGroup(8, new DefaultThreadFactory("workerGroup"));
+        UnorderedThreadPoolEventExecutor localBusinessGroup =
+                new UnorderedThreadPoolEventExecutor(10, new DefaultThreadFactory("business"));
 
         LoggingHandler infoHandler = new LoggingHandler(LogLevel.INFO);
         MetricHandler metricHandler = new MetricHandler();
-        // 禁用流量整形
-//        NioEventLoopGroup eventLoopGroupForTrafficShaping = new NioEventLoopGroup(0, new DefaultThreadFactory("TS"));
-//        GlobalTrafficShapingHandler globalTrafficShapingHandler = new GlobalTrafficShapingHandler(eventLoopGroupForTrafficShaping, 10 * 1024 * 1024, 10 * 1024 * 1024);
+
+        ServerBootstrap bootstrap = new ServerBootstrap();
+
+        bootstrap.group(localBossGroup, localWorkerGroup)
+                .channel(NioServerSocketChannel.class)
+                .childOption(NioChannelOption.TCP_NODELAY, true)
+                .option(NioChannelOption.SO_BACKLOG, 1024)
+                .childHandler(new ChannelInitializer<SocketChannel>() {
+                    @Override
+                    protected void initChannel(SocketChannel ch) {
+                        ChannelPipeline pipeline = ch.pipeline();
+
+                        pipeline.addLast(new IdleStateHandler(60, 30, 0, TimeUnit.SECONDS));
+                        pipeline.addLast("frameDecoder", new StreamFrameDecoder());
+                        pipeline.addLast("metricHandler", metricHandler);
+                        pipeline.addLast("frameEncoder", new StreamFrameEncoder());
+                        pipeline.addLast("protocolDecoder", new RequestProtocolDecoder());
+                        pipeline.addLast("protocolEncoder", new ResponseProtocolEncoder());
+                        pipeline.addLast("flushEnhance", new FlushConsolidationHandler(5, true));
+                        pipeline.addLast(localBusinessGroup, "serverHandler", new ServerHandler());
+                        pipeline.addLast("infoHandler", infoHandler);
+                    }
+                });
 
         try {
-            ServerBootstrap bootstrap = new ServerBootstrap();
-
-            bootstrap.group(bossGroup, workerGroup)
-                    .channel(NioServerSocketChannel.class)
-                    .childOption(NioChannelOption.TCP_NODELAY, true) // 设置开启算法优化
-                    .option(NioChannelOption.SO_BACKLOG, 1024)  //设置最大等待连接数量
-                    .childHandler(new ChannelInitializer<SocketChannel>() {
-                        @Override
-                        protected void initChannel(SocketChannel ch) {
-                            ChannelPipeline pipeline = ch.pipeline();
-
-                            pipeline.addLast(new IdleStateHandler(60, 30, 0, TimeUnit.SECONDS));
-
-//                            pipeline.addLast("trafficShapingHandler", globalTrafficShapingHandler);
-
-                            pipeline.addLast("frameDecoder", new StreamFrameDecoder());
-                            pipeline.addLast("frameEncoder", new StreamFrameEncoder());
-                            pipeline.addLast("protocolDecoder", new RequestProtocolDecoder());
-                            pipeline.addLast("protocolEncoder", new ResponseProtocolEncoder());
-
-                            // 每5次写进行一次flush，打开异步增强
-                            pipeline.addLast("flushEnhance", new FlushConsolidationHandler(5, true));
-                            pipeline.addLast(businessGroup, "serverHandler", new ServerHandler());
-
-                            pipeline.addLast("metricHandler", metricHandler);
-                            pipeline.addLast("infoHandler", infoHandler);
-
-                        }
-                    });
-
             ChannelFuture future = bootstrap.bind(serverNode.getPort()).sync();
-            logger.info("Server started, listening on port：" + serverNode.getPort());
-            // 阻塞，直到关闭
-            future.channel().closeFuture().sync();
-        } finally {
-            // 优雅关闭事件循环组
-            bossGroup.shutdownGracefully();
-            workerGroup.shutdownGracefully();
+            this.bossGroup = localBossGroup;
+            this.workerGroup = localWorkerGroup;
+            this.businessGroup = localBusinessGroup;
+            this.serverChannel = future.channel();
+            this.serverChannel.closeFuture().addListener(f -> logger.info("Server channel closed."));
+            logger.info("Server started, listening on port={}", serverNode.getPort());
+        } catch (InterruptedException interruptedException) {
+            Thread.currentThread().interrupt();
+            shutdownGroups(localBossGroup, localWorkerGroup, localBusinessGroup);
+            throw interruptedException;
+        } catch (RuntimeException runtimeException) {
+            shutdownGroups(localBossGroup, localWorkerGroup, localBusinessGroup);
+            throw runtimeException;
+        }
+    }
+
+    public synchronized void close() throws InterruptedException {
+        Channel currentServerChannel = this.serverChannel;
+        if (currentServerChannel != null) {
+            currentServerChannel.close().sync();
+            this.serverChannel = null;
+        }
+
+        EventLoopGroup currentBossGroup = this.bossGroup;
+        EventLoopGroup currentWorkerGroup = this.workerGroup;
+        UnorderedThreadPoolEventExecutor currentBusinessGroup = this.businessGroup;
+        this.bossGroup = null;
+        this.workerGroup = null;
+        this.businessGroup = null;
+        shutdownGroups(currentBossGroup, currentWorkerGroup, currentBusinessGroup);
+    }
+
+    public boolean isRunning() {
+        Channel currentServerChannel = this.serverChannel;
+        return currentServerChannel != null && currentServerChannel.isActive();
+    }
+
+    private void shutdownGroups(
+            EventLoopGroup localBossGroup,
+            EventLoopGroup localWorkerGroup,
+            UnorderedThreadPoolEventExecutor localBusinessGroup) throws InterruptedException {
+        if (localBusinessGroup != null) {
+            localBusinessGroup.shutdownGracefully().sync();
+        }
+        if (localWorkerGroup != null) {
+            localWorkerGroup.shutdownGracefully().sync();
+        }
+        if (localBossGroup != null) {
+            localBossGroup.shutdownGracefully().sync();
         }
     }
 }
