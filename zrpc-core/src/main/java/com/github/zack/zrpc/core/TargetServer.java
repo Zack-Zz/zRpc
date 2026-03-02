@@ -28,6 +28,8 @@ import io.netty.util.concurrent.UnorderedThreadPoolEventExecutor;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * Netty-based server bootstrap that manages acceptor/worker/business resources.
+ *
  * @author zack
  * @since 2024/12/19
  */
@@ -39,6 +41,12 @@ public class TargetServer {
     private volatile UnorderedThreadPoolEventExecutor businessGroup;
     private volatile Channel serverChannel;
 
+    /**
+     * Starts the server and blocks until channel close.
+     *
+     * @param serverNode server bind configuration
+     * @throws InterruptedException when startup or wait is interrupted
+     */
     public synchronized void openConnect(ServerNode serverNode) throws InterruptedException {
         start(serverNode);
         Channel currentServerChannel = this.serverChannel;
@@ -47,6 +55,13 @@ public class TargetServer {
         }
     }
 
+    /**
+     * Starts the server in non-blocking mode.
+     *
+     * @param serverNode server bind configuration
+     * @throws InterruptedException when startup is interrupted
+     * @throws IllegalArgumentException when port configuration is invalid
+     */
     public synchronized void start(ServerNode serverNode) throws InterruptedException {
         if (serverNode == null) {
             throw new IllegalArgumentException("serverNode must not be null");
@@ -107,6 +122,11 @@ public class TargetServer {
         }
     }
 
+    /**
+     * Closes channel and all server-side executor groups.
+     *
+     * @throws InterruptedException when shutdown is interrupted
+     */
     public synchronized void close() throws InterruptedException {
         Channel currentServerChannel = this.serverChannel;
         if (currentServerChannel != null) {
@@ -123,6 +143,11 @@ public class TargetServer {
         shutdownGroups(currentBossGroup, currentWorkerGroup, currentBusinessGroup);
     }
 
+    /**
+     * Indicates whether server channel is running.
+     *
+     * @return {@code true} when bound channel is active
+     */
     public boolean isRunning() {
         Channel currentServerChannel = this.serverChannel;
         return currentServerChannel != null && currentServerChannel.isActive();

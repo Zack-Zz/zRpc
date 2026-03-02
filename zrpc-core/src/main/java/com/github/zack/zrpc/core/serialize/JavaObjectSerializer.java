@@ -10,6 +10,9 @@ import java.io.ObjectOutputStream;
 
 /**
  * Java native serialization for compatibility only.
+ *
+ * @author zack
+ * @since 2026/3/2
  */
 public class JavaObjectSerializer implements Serializer {
 

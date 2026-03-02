@@ -11,6 +11,8 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 
 /**
+ * Synchronous RPC client facade over a connected Netty channel.
+ * It manages pending request registration, timeout handling, and response error mapping.
  *
  * @author zack
  * @since 2025/2/18
@@ -29,6 +31,17 @@ public class RpcClient {
         this.requestTimeoutMs = requestTimeoutMs;
     }
 
+    /**
+     * Sends a request and blocks until response, timeout, or transport failure.
+     *
+     * @param request request payload containing a non-empty request id
+     * @return successful response message
+     * @throws InterruptedException when current thread is interrupted while waiting
+     * @throws IllegalArgumentException when request or request id is invalid
+     * @throws RpcTransportException when channel is inactive or send fails
+     * @throws RpcTimeoutException when waiting time exceeds configured timeout
+     * @throws RpcServerException when server returns an error string
+     */
     public ResponseMessage sendRequest(RequestMessage request) throws InterruptedException {
         if (request == null) {
             throw new IllegalArgumentException("request must not be null");

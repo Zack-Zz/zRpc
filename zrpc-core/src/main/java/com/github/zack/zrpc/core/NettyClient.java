@@ -17,6 +17,8 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
 /**
+ * Netty-based client transport responsible for connection lifecycle management.
+ *
  * @author zack
  * @since 2024/12/20
  */
@@ -29,6 +31,14 @@ public class NettyClient {
     private volatile boolean connectedSuccess = false;
     private volatile EventLoopGroup group;
 
+    /**
+     * Establishes a connection to the target node and returns after connection is ready.
+     *
+     * @param targetNode target host and port
+     * @throws InterruptedException when the connect operation is interrupted
+     * @throws IllegalArgumentException when target node parameters are invalid
+     * @throws RpcTransportException when connection cannot be established
+     */
     public synchronized void connect(TargetNode targetNode) throws InterruptedException {
         if (targetNode == null) {
             throw new IllegalArgumentException("targetNode must not be null");
@@ -75,6 +85,11 @@ public class NettyClient {
         logger.info("connect success. target={}", targetNode);
     }
 
+    /**
+     * Closes the active channel and shuts down the event loop group.
+     *
+     * @throws InterruptedException when close operation is interrupted
+     */
     public synchronized void close() throws InterruptedException {
         Channel activeChannel = this.channel;
         if (activeChannel != null) {
@@ -89,10 +104,20 @@ public class NettyClient {
         this.connectedSuccess = false;
     }
 
+    /**
+     * Returns the active channel instance.
+     *
+     * @return active channel, or {@code null} before successful connect
+     */
     public Channel getChannel() {
         return channel;
     }
 
+    /**
+     * Indicates whether the client currently holds an active connection.
+     *
+     * @return {@code true} when channel is connected and active
+     */
     public boolean isConnectedSuccess() {
         Channel activeChannel = this.channel;
         return connectedSuccess && activeChannel != null && activeChannel.isActive();

@@ -13,6 +13,9 @@ import java.nio.charset.StandardCharsets;
 
 /**
  * Safe serializer supporting a bounded set of value types.
+ *
+ * @author zack
+ * @since 2026/3/2
  */
 public class SafeSerializer implements Serializer {
 
