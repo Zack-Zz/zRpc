@@ -1,45 +1,77 @@
 # zRpc
-## 架构
 
-### zRpc-api
-接口层
+zRpc 是一个基于 Netty + Protobuf 的轻量级 Java RPC 框架，当前聚焦在 `zrpc-core` 的稳定性与开源可用性建设。
 
-### zRpc-core
-核心实现
+## 当前状态
 
-### zRpc-agent
-agent
+- 已实现：`zrpc-core`
+- 规划中：`zrpc-api`、`zrpc-adapter`、`zrpc-agent`
 
-### zRpc-adapter
-适配层
+说明：规划中的模块尚未在仓库落地，请以当前代码与 release note 为准。
 
+## 特性
 
-## 组件
+- 基于 Netty 的长连接通信
+- 自定义请求/响应协议
+- 请求-响应异步关联与超时控制
+- 安全默认序列化（默认不使用 Java 原生反序列化）
+- 基础指标采集与日志能力
 
-### 网络通信层（Netty）：
-* 基于 Netty 实现长连接、高吞吐量的异步通信。
+## 环境要求
 
-### 协议层：
-* 自定义 RPC 协议（请求/响应格式）。
-* 轻量级的序列化机制（如 ProtoBuf、Kryo）。
+- JDK 17+
+- Maven 3.9+
 
-### 注册中心（可选）：
+## 快速开始
 
-提供服务注册与发现（如基于 Zookeeper、Etcd、Consul）。
-也可以使用本地直连模式（无注册中心）。
+### 1) 拉取并测试
 
-### 负载均衡（可选）：
-轮询（Round Robin）、随机（Random）、一致性哈希（Consistent Hashing）。
+```bash
+mvn -q test
+```
 
-### 容错机制：
-* 重试机制
-* 超时控制
-* 熔断和限流
+### 2) 运行最小 Demo
 
-### 扩展机制
-* SPI
+在 IDE 中分别运行以下类：
 
+1. 服务端：`zrpc-core/src/test/java/com/github/zack/zrpc/core/test/demo/ServerTester.java`
+2. 客户端：`zrpc-core/src/test/java/com/github/zack/zrpc/core/test/demo/ClientTester.java`
 
-### 侵入方式
-* maven
-* agent
+客户端将输出 RPC 调用结果。
+
+## 序列化策略
+
+- 默认：`safe`（受限类型集合，安全默认）
+- 兼容模式：`java`（仅兼容用途，不建议用于不可信输入）
+
+切换方式：
+
+```bash
+mvn -Dzrpc.serializer=java test
+```
+
+## Roadmap
+
+- `v0.1.x`
+  - 完成 core 稳定性治理
+  - 建立 CI、测试门禁和发布基线
+- `v0.2.x`
+  - 规划引入 `zrpc-api`
+  - 扩展序列化/注册中心适配能力
+
+## 文档
+
+- 设计文档：`docs/open-source-readiness-design.md`
+- 执行方案：`docs/open-source-readiness-execution-plan.md`
+
+## 贡献
+
+请先阅读 `CONTRIBUTING.md`。
+
+## 安全
+
+安全漏洞提交流程见 `SECURITY.md`。
+
+## 许可证
+
+`LICENSE`（Apache-2.0）
