@@ -63,6 +63,7 @@ mvn -Dzrpc.serializer=java test
 
 - 设计文档：`docs/open-source-readiness-design.md`
 - 执行方案：`docs/open-source-readiness-execution-plan.md`
+- 发布手册：`docs/release-runbook.md`
 
 ## 贡献
 
