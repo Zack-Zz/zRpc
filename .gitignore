@@ -14,3 +14,8 @@ target/
 data/
 zrpc-core/src/test/resources/log4j2.xml
 zrpc-core/src/main/java/com/github/zack/zrpc/core/proto/*.java
+AGENTS.md
+/.codex/
+/.ai-code/
+/.agents/
+/JAVA_WORKFLOW.md
